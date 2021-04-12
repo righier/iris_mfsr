@@ -29,14 +29,9 @@ def clear_memory():
 ## returns cuda device if available
 def get_device():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print("Running on:", "cpu" if device.type == "cpu" else torch.cuda.get_device_name(device))
     print_free_memory()
-import torch
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-device_cpu = torch.device("cpu")
-print("Running on:", "cpu" if device.type == "cpu" else torch.cuda.get_device_name(device))
-if torch.cuda.is_available():
-  torch.cuda.empty_cache()
-  print_free_memory()
+    return device
 
 def get_cpu_device():
     return torch.device("cpu")
