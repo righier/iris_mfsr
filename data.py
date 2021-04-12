@@ -1,6 +1,6 @@
-
+import torch
 from torch.utils.data import Dataset
-from skimage import io, transform
+#from skimage import io, transform
 import torchvision.transforms.functional as TF
 import random
 from PIL import Image
@@ -84,15 +84,15 @@ class Vimeo7GrayDataset(ImageSequenceDataset):
     kwargs['img_offset'] = 1 + ((7 - sequence_len) // 2)
     kwargs['example_name'] = "im{0}.jpg"
     kwargs['label_name'] = "label_x{0}.jpg".format(scale)
-    kwargs['dirs'] = self.load_dirlist(basedir, train)
+    kwargs['dirs'] = self.load_dirs(basedir, train)
     kwargs['basedir'] = os.path.join(basedir, 'sequences')
     kwargs['do_grayscale'] = False
 
     super().__init__(scale=scale, sequence_len=sequence_len, train=train, **kwargs)
 
-  def load_dirlist(self, basedir, train):
+  def load_dirs(self, basedir, train):
     filename = 'sep_trainlist.txt' if train else 'sep_testlist.txt'
-    path = os.path.join(self.basedir, filename)
+    path = os.path.join(basedir, filename)
     with open(path) as f:
       dirlist = [s.strip() for s in f.readlines()]
     return dirlist
