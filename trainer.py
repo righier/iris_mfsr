@@ -36,7 +36,7 @@ def train_batch(device, model, X, Y, criterion, optimizer):
   loss = float(loss)
   return loss
 
-def train(cfg, device, model, train_loader, test_loader, criterion, accuracy_func, optimizer, scheduler=None, log_freq=50):
+def train(cfg, device, model, train_loader, test_loader, criterion, accuracy_func, optimizer, scheduler=None, freq_scheduler_update=False, log_freq=50):
 
   train_loss = 0
   batch_count = 0
@@ -50,6 +50,9 @@ def train(cfg, device, model, train_loader, test_loader, criterion, accuracy_fun
 
     for X, Y in tqdm(train_loader, desc="Training", leave=False):
       loss_batch = train_batch(device, model, X, Y, criterion, optimizer)
+
+      if scheduler and freq_scheduler_update:
+        schduler.step()
 
       train_loss += loss_batch
       batch_count += 1
@@ -65,5 +68,5 @@ def train(cfg, device, model, train_loader, test_loader, criterion, accuracy_fun
     test_loss, accuracy = test(device, model, test_loader, criterion, accuracy_func)
     wandb.log({"epoch": epoch, "test_loss": test_loss, "accuracy": accuracy}, step=elem_count)
 
-    if scheduler:
+    if scheduler and not freq_scheduler_update:
       scheduler.step()
