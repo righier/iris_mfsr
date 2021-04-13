@@ -15,7 +15,7 @@ def wn_conv3d(inc, outc, ksize, stride=1, padding=0, weight_norm=True, padding_m
 
 class wdsr3d_block(nn.Module):
   def __init__(self, n_filters, expansion=6, weight_norm=True, low_rank_ratio = 0.8):
-    super(wdsr_block, self).__init__()
+    super(wdsr3d_block, self).__init__()
     self.conv = nn.Sequential(
       wn_conv3d(n_filters, n_filters * expansion, 1, weight_norm=weight_norm), 
       nn.ReLU(inplace=True),
@@ -29,7 +29,7 @@ class wdsr3d_block(nn.Module):
 class Model3DCommon(nn.Module):
 
   def __init__(self, res_block, upsample, scale=2, frames=7, n_layers=8, n_filters=32, expansion=6, weight_norm=True, ksize=3):
-    super(Model3DWDSRnet, self).__init__()
+    super(Model3DCommon, self).__init__()
     self.scale = scale
 
     relu = nn.ReLU(inplace=True)
