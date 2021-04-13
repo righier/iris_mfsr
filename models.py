@@ -39,7 +39,7 @@ class Model3DCommon(nn.Module):
       wn_conv3d(1, n_filters, ksize, 1, 1),
       relu,
       *repeat(res_block, (n_filters, expansion, weight_norm), n_layers),
-      *repeat(wn_conv3d, (n_filters, n_filters, ksize, 1, (0,1,1), weight_norm, 'reflect'), bod2_cnt, relu),
+      *repeat(wn_conv3d, (n_filters, n_filters, ksize, 1, (0,1,1), weight_norm), bod2_cnt, relu),
       wn_conv3d(n_filters, scale*scale, ksize, 1, (0,1,1), weight_norm),
     )
 
