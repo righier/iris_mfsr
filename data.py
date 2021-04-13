@@ -28,7 +28,7 @@ def augment(img, params, cs=1):
 
 class ImageSequenceDataset(Dataset):
 
-  def __init__(self, basedir, example_name, label_name, dirs, do_grayscale=False, scale=2, sequence_len=7, img_offset=0, train=True, cache=False, separate_central_image=False, augmentation=None):
+  def __init__(self, basedir, example_name, label_name, dirs, do_grayscale=False, scale=2, sequence_len=7, img_offset=0, train=True, cache=False, separate_central_image=False, single_image=False, augmentation=None):
     for x, y in locals().items():
       if x != 'self':
         setattr(self, x, y)
@@ -50,19 +50,26 @@ class ImageSequenceDataset(Dataset):
     example_paths = [abstract_path.format(id) for id in range(self.img_offset, self.sequence_len+self.img_offset)]
     label_path = os.path.join(self.basedir, dir, self.label_name)
 
-    imgs = [Image.open(path) for path in example_paths]
-    img_size = imgs[0].size
+    if self.single_image:
+      img = Image.open(exmaple_paths[self.sequence_len//2])
+      augment_params = None
+      X = self.apply_transforms(img, augment_params, 1)
 
-    # augment_params = augment_init(self.rand_hflip, self.rand_vflip, self.rand_crop, self.crop_size, img_size)
-    augment_params = None
+    else:
+      imgs = [Image.open(path) for path in example_paths]
+      img_size = imgs[0].size
 
-    imgs = [self.apply_transforms(img, augment_params, 1) for img in imgs]
-    X = torch.stack(imgs)
-    X = X.permute(1,0,2,3)
+      # augment_params = augment_init(self.rand_hflip, self.rand_vflip, self.rand_crop, self.crop_size, img_size)
+      augment_params = None
+
+      imgs = [self.apply_transforms(img, augment_params, 1) for img in imgs]
+      X = torch.stack(imgs)
+      X = X.permute(1,0,2,3)
+
     Y = Image.open(label_path)
     Y = self.apply_transforms(Y, augment_params, self.scale)
 
-    if self.separate_central_image:
+    if self.separate_central_image and not self.single_image:
       return X, imgs[self.sequence_len//2], Y
     else:
       return X, Y
