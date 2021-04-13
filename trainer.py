@@ -57,7 +57,8 @@ def train(cfg, device, model, train_loader, test_loader, criterion, accuracy_fun
 
       if batch_count == log_freq:
         train_loss /= batch_count
-        wandb.log({"train_loss": train_loss}, step=elem_count)
+        learning_rate = optimizer.param_groups[0]['lr']
+        wandb.log({"train_loss": train_loss, "learning_rate": learning_rate}, step=elem_count)
         batch_count = 0
         train_loss = 0
     
