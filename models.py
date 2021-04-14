@@ -98,8 +98,13 @@ class Model3DCommon(nn.Module):
 def upsample_naive(scale, mode='bicubic'):
   return nn.Upsample(scale_factor=scale, mode=mode, align_corners=False)
 
-def Model3DWDSRnet(res_block=wdsr3d_block, upsample=upsample_conv2d, scale=2, frames=7, n_layers=8, n_filters=32, expansion=6, weight_norm=True, ksize=3, **kargs):
-  upsample = upsample(scale)
+def Model3DWDSRnet(res_block=wdsr3d_block, upsample='conv2d', scale=2, frames=7, n_layers=8, n_filters=32, expansion=6, weight_norm=True, ksize=3, **kargs):
+  if upsample == 'bicubic': 
+    upsample = upsample_naive(scale)
+  elif upsample == 'conv2d':
+    upsample = upsample_conv2d(scale)
+  else:
+    upsample = upsample(scale)
   return Model3DCommon(res_block, upsample, scale, frames, n_layers, n_filters, expansion, weight_norm, ksize, **kargs)
 
 def Model3DSRnet(scale=2, frames=7, n_layers=4, n_filters=64, weight_norm=False, ksize=3, **kwargs):
