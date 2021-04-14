@@ -6,6 +6,7 @@ import random
 from PIL import Image
 import os
 from tqdm.auto import tqdm
+import utils
 
 def augment_init(do_hflip=False, do_vflip=False, do_crop=False, crop_size=None, img_size=None):
   do_hflip = do_hflip and random.random() > 0.5
@@ -28,15 +29,17 @@ def augment(img, params, cs=1):
 
 class ImageSequenceDataset(Dataset):
 
-  def __init__(self, basedir, example_name, label_name, dirs, do_grayscale=False, scale=2, sequence_len=7, img_offset=0, train=True, cache=False, separate_central_image=False, single_image=False, augmentation=None):
+  def __init__(self, basedir, example_name, label_name, dirs, do_grayscale=False, scale=2, sequence_len=7, img_offset=0, train=True, cache=False, separate_central_image=False, single_image=False, augmentation=None, workers=1):
     for x, y in locals().items():
       if x != 'self':
         setattr(self, x, y)
 
-    if cache: self.cache_all()
+    if cache: self.cache_all(workers)
 
-  def cache_all(self):
+  def cache_all(self, workers):
     self.images = [self.load_datapoint(dir) for dir in tqdm(self.dirs)]
+    # func = lambda dir: self.load_datapoint(dir)
+    # self.images = utils.p_map(self.load_datapoint, self.dirs, workers)
 
   def apply_transforms(self, img, augment_params=None, crop_scale=1):
     # if self.augment:

@@ -1,10 +1,16 @@
 from multiprocessing import Pool, cpu_count
 import torch
 import gc
+from tqdm.auto import tqdm
 
-def p_umap(func, data, n_worker=1):
+def p_umap(func, data, n_worker=1, chunk=50):
     with Pool(n_worker) as pool:
-        out = list(tqdm(pool.imap_unordered(func, data), total=len(data)))
+        out = list(tqdm(pool.imap_unordered(func, data, chunksize=chunk), total=len(data)))
+    return out
+
+def p_map(func, data, n_worker=1, chunk=50):
+    with Pool(n_worker) as pool:
+        out = list(tqdm(pool.imap(func, data, chunksize=chunk), total=len(data)))
     return out
 
 def to_gb(x):
