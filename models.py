@@ -61,9 +61,11 @@ class upsample_conv2d(nn.Module):
 
 class Model3DCommon(nn.Module):
 
-  def __init__(self, res_block, upsample, scale=2, frames=7, n_layers=8, n_filters=32, expansion=6, weight_norm=True, ksize=3):
+  def __init__(self, res_block, upsample, scale=2, frames=7, n_layers=8, n_filters=32, expansion=6, weight_norm=True, ksize=3, mean=0.0, std=1.0):
     super(Model3DCommon, self).__init__()
     self.scale = scale
+    self.mean = mean
+    self.std = std
 
     relu = nn.ReLU(inplace=True)
     bod2_cnt = (frames // (ksize - 1)) - 1
@@ -79,6 +81,8 @@ class Model3DCommon(nn.Module):
     self.upsample = upsample
   
   def forward(self, x):
+    x = (x-self.mean) / self.std # normalize
+
     lr = x[:, :, 3] #picks the image in the middle of the video sequence @TODO: try to pass the middle image as a separate input
     y = self.upsample(lr)
 
@@ -87,6 +91,8 @@ class Model3DCommon(nn.Module):
     x = F.pixel_shuffle(x, self.scale) # reorders pixels
 
     x = x.add(y)
+
+    x = x * self.std + self.mean
     return x
 
 def upsample_naive(scale, mode='bicubic'):
