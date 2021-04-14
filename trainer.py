@@ -52,7 +52,7 @@ def train(cfg, device, model, train_loader, test_loader, criterion, accuracy_fun
       loss_batch = train_batch(device, model, X, Y, criterion, optimizer)
 
       if scheduler and freq_scheduler_update:
-        schduler.step()
+        scheduler.step()
 
       train_loss += loss_batch
       batch_count += 1

@@ -9,6 +9,10 @@ def repeat(block, args, n, activation=None):
     if activation: layers.append(activation)
   return layers
 
+def wn_conv2d(inc, outc, ksize, stride=1, padding=0, weight_norm=True, padding_mode='zeros'):
+  module = nn.Conv2d(inc, outc, ksize, stride, padding, padding_mode=padding_mode)
+  return nn.utils.weight_norm(module) if weight_norm else module
+
 def wn_conv3d(inc, outc, ksize, stride=1, padding=0, weight_norm=True, padding_mode='zeros'):
   module = nn.Conv3d(inc, outc, ksize, stride, padding, padding_mode=padding_mode)
   return nn.utils.weight_norm(module) if weight_norm else module
@@ -25,6 +29,35 @@ class wdsr3d_block(nn.Module):
 
   def forward(self, x):
     return x + self.conv(x)
+
+class wdsr2d_block(nn.Module):
+  def __init__(self, n_filters, expansion=6, weight_norm=True, low_rank_ratio = 0.8):
+    super(wdsr3d_block, self).__init__()
+    self.conv = nn.Sequential(
+      wn_conv2d(n_filters, n_filters * expansion, 1, weight_norm=weight_norm), 
+      nn.ReLU(inplace=True),
+      wn_conv2d(n_filters * expansion, int(n_filters * low_rank_ratio), 1, weight_norm=weight_norm),
+      wn_conv2d(int(n_filters * low_rank_ratio), n_filters, 3, padding=1, weight_norm=weight_norm)
+    )
+
+  def forward(self, x):
+    return x + self.conv(x)
+
+class upsample_conv2d(nn.Module):
+  def __init__(self, scale, n_filters=1):
+    super(upsample_conv2d, self).__init__()
+    self.scale = scale
+    self.body = nn.Sequential(
+      wn_conv2d(n_filters, scale*scale, 3, padding=1, padding_mode='reflect'),
+      nn.ReLU(inplace=True),
+      wn_conv2d(n_filters, scale*scale, 3, padding=1, padding_mode='reflect'),
+    )
+
+  def forward(self, x):
+    x = self.body(x)
+    x = F.pixel_shuffle(x, self.scale)
+    return x
+
 
 class Model3DCommon(nn.Module):
 
@@ -56,11 +89,13 @@ class Model3DCommon(nn.Module):
     x = x.add(y)
     return x
 
-def Model3DWDSRnet(res_block=wdsr3d_block, upsample='bicubic', scale=2, frames=7, n_layers=8, n_filters=32, expansion=6, weight_norm=True, ksize=3):
-  if upsample == 'bicubic':
-    upsample = nn.Upsample(scale_factor=scale, mode='bicubic', align_corners=False)
+def upsample_naive(scale, mode='bicubic'):
+  return nn.Upsample(scale_factor=scale, mode=mode, align_corners=False)
+
+def Model3DWDSRnet(res_block=wdsr3d_block, upsample=upsample_conv2d, scale=2, frames=7, n_layers=8, n_filters=32, expansion=6, weight_norm=True, ksize=3):
+  upsample = upsample(scale)
   return Model3DCommon(res_block, upsample, scale, frames, n_layers, n_filters, expansion, weight_norm, ksize)
 
 def Model3DSRnet(scale=2, frames=7, n_layers=4, n_filters=64, weight_norm=False, ksize=3):
-  upsample = nn.Upsample(scale_factor=scale, mode='bicubic', align_corners=False)
+  upsample = upsample_naive(scale)
   return Model3DCommon(res_block, upsample, scale, frames, n_layers, n_filters, expansion, weight_norm, ksize)

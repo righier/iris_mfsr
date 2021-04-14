@@ -120,4 +120,4 @@ class FaceGrayDataset(ImageSequenceDataset):
     super().__init__(scale=scale, sequence_len=sequence_len, train=train, **kwargs)
 
   def load_dirs(self, basedir, subdir):
-    return os.listdir(os.path.join(basedir, subdir))
+    return sorted(os.listdir(os.path.join(basedir, subdir)), key=int)
