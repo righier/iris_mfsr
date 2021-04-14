@@ -50,7 +50,7 @@ class upsample_conv2d(nn.Module):
     self.body = nn.Sequential(
       wn_conv2d(n_filters, scale*scale, 3, padding=1, padding_mode='reflect'),
       nn.ReLU(inplace=True),
-      wn_conv2d(n_filters, scale*scale, 3, padding=1, padding_mode='reflect'),
+      wn_conv2d(scale*scale, scale*scale, 3, padding=1, padding_mode='reflect'),
     )
 
   def forward(self, x):
