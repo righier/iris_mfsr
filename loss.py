@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torchvision
 
 def psnr(x, y):
   EPS = 1e-8
