@@ -8,10 +8,11 @@ def psnr(x, y):
   scores = -10 * torch.log10(mse + EPS)
   return torch.mean(scores, dim=0)
 
-class VggLoss(nn.Module, add_l1=True):
-    def __init__(self, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], grayscale=True):
+class VggLoss(nn.Module):
+    def __init__(self, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], grayscale=True, add_l1=True):
         super(VggLoss, self).__init__()
         
+        self.add_l1=add_l1
         self.grayscale = grayscale
         self.register_buffer('mean', torch.Tensor(mean).view(1,3,1,1))
         self.register_buffer('std', torch.Tensor(std).view(1,3,1,1))
