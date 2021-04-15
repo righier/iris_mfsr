@@ -100,7 +100,9 @@ def upsample_naive(scale, mode='bicubic'):
 
 def Model3DWDSRnet(res_block=wdsr3d_block, upsample='conv2d', scale=2, frames=7, n_layers=8, n_filters=32, expansion=6, weight_norm=True, ksize=3, **kargs):
   if upsample == 'bicubic': 
-    upsample = upsample_naive(scale)
+    upsample = upsample_naive(scale, mode='bicubic')
+  elif upsample == 'bilinear':
+    upsample = upsample_naive(scale, mode='bilinear')
   elif upsample == 'conv2d':
     upsample = upsample_conv2d(scale)
   else:
@@ -110,3 +112,8 @@ def Model3DWDSRnet(res_block=wdsr3d_block, upsample='conv2d', scale=2, frames=7,
 def Model3DSRnet(scale=2, frames=7, n_layers=4, n_filters=64, weight_norm=False, ksize=3, **kwargs):
   upsample = upsample_naive(scale)
   return Model3DCommon(res_block, upsample, scale, frames, n_layers, n_filters, expansion, weight_norm, ksize, **kargs)
+
+def init_weights(m):
+  if type(m) == nn.Conv3d or type(m) == nn.Conv2d:
+    torch.nn.init.xavier_uniform_(m.weight)
+    m.bias.data.fill_(0.01)
