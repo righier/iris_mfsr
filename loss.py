@@ -29,7 +29,7 @@ class VggLoss(nn.Module):
         
     def forward(self, pred, label):
         loss = 0.0
-        if add_l1: loss += nn.functional.l1_loss(pred, label)
+        if self.add_l1: loss += nn.functional.l1_loss(pred, label)
 
         pred = self.preprocess(pred)
         label = self.preprocess(label)
