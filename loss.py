@@ -8,7 +8,7 @@ def psnr(x, y):
   scores = -10 * torch.log10(mse + EPS)
   return torch.mean(scores, dim=0)
 
-class VggLoss(nn.Module):
+class VggLoss(nn.Module, add_l1=True):
     def __init__(self, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], grayscale=True):
         super(VggLoss, self).__init__()
         
@@ -27,10 +27,12 @@ class VggLoss(nn.Module):
         return x
         
     def forward(self, pred, label):
+        loss = 0.0
+        if add_l1: loss += nn.functional.l1_loss(pred, label)
+
         pred = self.preprocess(pred)
         label = self.preprocess(label)
-        
-        loss = 0.0
+
         for bl in self.blocks:
             pred = bl(pred)
             label = bl(label)
