@@ -69,4 +69,4 @@ def train(cfg, device, model, train_loader, test_loader, criterion, accuracy_fun
     wandb.log({"epoch": epoch, "test_loss": test_loss, "accuracy": accuracy}, step=elem_count)
 
     if scheduler and not freq_scheduler_update:
-      scheduler.step()
+      scheduler.step(test_loss)

@@ -92,7 +92,7 @@ class Model3DCommon(nn.Module):
 
     x = x.add(y)
 
-    x = x * self.std + self.mean
+    x = x * self.std + self.mean # denormalize
     return x
 
 def upsample_naive(scale, mode='bicubic'):
