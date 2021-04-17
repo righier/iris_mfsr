@@ -36,7 +36,14 @@ def train_batch(device, model, X, Y, criterion, optimizer):
   loss = float(loss)
   return loss
 
-def train(cfg, device, model, train_loader, test_loader, criterion, accuracy_func, optimizer, scheduler=None, freq_scheduler_update=False, log_freq=50, eval_freq=200):
+import torchvision.transforms.functional as TF
+def samples_to_img(model, device, device_cpu, samples):
+  return [TF.to_pil_image(model(x[None,:,:,:,:].to(device))[0].clamp(0.0,1.0).to(device_cpu)) for x in samples]
+
+import utils
+def train(cfg, device, model, train_loader, test_loader, criterion, accuracy_func, optimizer, scheduler=None, freq_scheduler_update=False, log_freq=50, eval_freq=200, samples=None):
+
+  device_cpu = utils.get_cpu_device()
 
   train_loss = 0
   batch_count = 0
@@ -46,9 +53,12 @@ def train(cfg, device, model, train_loader, test_loader, criterion, accuracy_fun
   
   for epoch in tqdm(range(cfg.epochs), desc="Epochs"):
     for X, Y in tqdm(train_loader, desc="Training", leave=False):
+      
       if batch_count % eval_freq == 0:
+        model.eval()
         test_loss, accuracy = test(device, model, test_loader, criterion, accuracy_func)
-        wandb.log({"epoch": epoch, "test_loss": test_loss, "accuracy": accuracy, "samples"}, step=elem_count)
+        imgs = samples_to_img(model, device, device_cpu, samples)
+        wandb.log({"epoch": epoch, "test_loss": test_loss, "accuracy": accuracy, "imgs":imgs}, step=elem_count)
         model.train()
 
       loss_batch = train_batch(device, model, X, Y, criterion, optimizer)
@@ -66,9 +76,6 @@ def train(cfg, device, model, train_loader, test_loader, criterion, accuracy_fun
         wandb.log({"train_loss": train_loss, "learning_rate": learning_rate}, step=elem_count)
         batch_count = 0
         train_loss = 0
-      
-    
-    
 
     if scheduler and not freq_scheduler_update:
       scheduler.step(test_loss)
