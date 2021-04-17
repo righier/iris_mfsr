@@ -57,7 +57,7 @@ def train(cfg, device, model, train_loader, test_loader, criterion, accuracy_fun
       if batch_count % eval_freq == 0:
         model.eval()
         test_loss, accuracy = test(device, model, test_loader, criterion, accuracy_func)
-        imgs = samples_to_img(model, device, device_cpu, samples)
+        imgs = samples_to_wandb(model, device, device_cpu, samples)
         wandb.log({"epoch": epoch, "test_loss": test_loss, "accuracy": accuracy, "imgs":imgs}, step=elem_count)
         model.train()
 
