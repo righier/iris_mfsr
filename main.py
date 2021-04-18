@@ -1,8 +1,16 @@
+import argparse
+
 import data
 import trainer
 import models
 import wandb
 import utils
+
+def parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--cfg', default='config.json', type=str)
+    args = parser.parse_args()
+    return args
 
 def run_experiment(cfg_dict):
 
@@ -32,13 +40,14 @@ def run_experiment(cfg_dict):
   
 
 
-def main():
-  cfg_dict = utils.load_config("./config.json")
+def main(args):
+  cfg_dict = utils.load_config(args.cfg)
   run_experiment(cfg_dict)
 
 
 if __name__=="__main__":
-  main()
+  args = parser()
+  main(args)
 
 
 
