@@ -28,6 +28,7 @@ class Trainer():
     self.mixed_precision = mixed_precision
 
     self.init_criterion(criterion)
+    self.init_score(score)
     self.init_optimizer(**optimizer)
 
     if eval_freq > len(self.trainloader): 
@@ -42,6 +43,7 @@ class Trainer():
 
   def init_score(self, score):
     if score=='psnr': self.score = loss.psnr
+    else: raise ValueError
 
   def init_optimizer(self, name, lr, weight_decay, scheduler):
     if name=="adam":    self.optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
