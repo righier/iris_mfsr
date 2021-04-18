@@ -119,15 +119,17 @@ def init_weights(m):
     torch.nn.init.xavier_uniform_(m.weight)
     m.bias.data.fill_(0.01)
 
-def make_model(name, upsample='bilinear', **kwargs):
+def make_model(name, upsample='bilinear', scale=2, **kwargs):
   if upsample == 'conv2d':
     upsample = upsample_conv2d(scale)
-  else:
+  elif upsample in ['bicubic', 'bilinear']:
     upsample = nn.Upsample(scale_factor=scale, mode=upsample, align_corners=False)
+  else: raise ValueError
 
-  if cfg.model_name=='3dwdsrnet':
-    return Model3DCommon(wdsr3d_block, upsample, **kwargs)
-  if cfg.model_name=='3dsrnet':
-    return Model3DCommon(wn_conv3d, upsample, **kwargs)
-  if name=="2dsrnet":
-    return Model2DSRnet(upsample, **kwargs)
+  if name=='3dwdsrnet':
+    return Model3DCommon(wdsr3d_block, upsample, scale, **kwargs)
+  elif name=='3dsrnet':
+    return Model3DCommon(wn_conv3d, upsample, scale, **kwargs)
+  elif name=="2dsrnet":
+    return Model2DSRnet(upsample, scale, **kwargs)
+  else: raise ValueError

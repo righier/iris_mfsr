@@ -6,7 +6,7 @@
     "train_dataset": {
         "dataset": {
             "name": "mlfdb",
-            "basedir": "./mlfdb",
+            "basedir": "C:/datasets/mlfdb",
             "train": true,
             "cache": false,
             "single_image": false,
@@ -15,13 +15,14 @@
         },
         "dataloader": {
             "batch_size": 32,
-            "workers": 2
+            "num_workers": 2
         }
     },
+
     "test_dataset": {
         "dataset": {
             "name": "mlfdb",
-            "basedir": "./mlfdb",
+            "basedir": "C:/datasets/mlfdb",
             "train": false,
             "cache": false,
             "single_image": false,
@@ -30,9 +31,10 @@
         },
         "dataloader": {
             "batch_size": 32,
-            "workers": 2
+            "num_workers": 2
         }
     },
+
     "model": {
         "name": "3dwdsrnet",
         "upsample": "bilinear",
@@ -44,6 +46,7 @@
         "n_filters": 32,
         "weight_norm": true
     },
+
     "trainer": {
         "epochs": 20,
         "optimizer": {

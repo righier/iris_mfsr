@@ -98,7 +98,7 @@ class Vimeo7GrayDataset(ImageSequenceDataset):
     kwargs['basedir'] = os.path.join(basedir, 'sequences')
     kwargs['do_grayscale'] = False
 
-    super().__init__(scale=scale, frames=frames, train=train, **kwargs)
+    super(Vimeo7GrayDataset, self).__init__(scale=scale, frames=frames, train=train, **kwargs)
 
   def load_dirs(self, basedir, train):
     filename = 'sep_trainlist.txt' if train else 'sep_testlist.txt'
@@ -120,7 +120,7 @@ class FaceGrayDataset(ImageSequenceDataset):
     kwargs['basedir'] = os.path.join(basedir, subdir)
     kwargs['do_grayscale'] = True
 
-    super().__init__(scale=scale, frames=frames, train=train, **kwargs)
+    super(FaceGrayDataset, self).__init__(scale=scale, frames=frames, train=train, **kwargs)
 
   def load_dirs(self, basedir, subdir):
     return sorted(os.listdir(os.path.join(basedir, subdir)), key=int)
@@ -128,8 +128,10 @@ class FaceGrayDataset(ImageSequenceDataset):
 def make_dataset(name, **kwargs):
   if name == "vimeo":
     return Vimeo7GrayDataset(**kwargs)
-  elif name == 'faces':
+  elif name == 'mlfdb':
     return FaceGrayDataset(**kwargs)
+  else: raise ValueError
 
-def make_loader(dataset, **kwargs):
-  return torch.utils.data.DataLoader(dataset, **kwargs)
+def make_loader(dataset, dataloader):
+  dataset_obj = make_dataset(**dataset)
+  return torch.utils.data.DataLoader(dataset_obj, **dataloader)

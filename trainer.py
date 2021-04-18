@@ -10,7 +10,7 @@ import torch.optim as optim
 import loss
 import utils
 import models
-import 
+import data
 
 class Trainer():
 
@@ -38,13 +38,15 @@ class Trainer():
     elif criterion=='mse': self.criterion = nn.MSELoss().to(self.device)
     elif criterion=='vgg': self.criterion = loss.VggLoss(add_l1=False).to(self.device)
     elif criterion=='vgg-l1': self.criterion = loss.VggLoss(add_l1=True).to(self.device)
+    else: raise ValueError
 
   def init_score(self, score):
     if score=='psnr': self.score = loss.psnr
 
-  def init_optimizer(self, name, learning_rate, weight_decay, scheduler):
-    if name="adam":    self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-    elif name="adamw": self.optimizer = optim.AdamW(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+  def init_optimizer(self, name, lr, weight_decay, scheduler):
+    if name=="adam":    self.optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
+    elif name=="adamw": self.optimizer = optim.AdamW(self.model.parameters(), lr=lr, weight_decay=weight_decay)
+    else: raise ValueError
     self.init_scheduler(**scheduler)
 
   def init_scheduler(self, name, max_lr):
@@ -54,6 +56,7 @@ class Trainer():
     elif name=='reduce_on_plateau':
       self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
       self.freq_scheduler = False
+    else: raise ValueError
 
   def test_batch(self, X, Y):
     X, Y = X.to(self.device), Y.to(self.device)
@@ -122,8 +125,8 @@ class Trainer():
 
         if batch_count % self.log_freq == 0:
           train_loss /= self.log_freq
-          learning_rate = self.optimizer.param_groups[0]['lr']
-          wandb.log({"train_loss": train_loss, "learning_rate": learning_rate}, step=elem_count)
+          lr = self.optimizer.param_groups[0]['lr']
+          wandb.log({"train_loss": train_loss, "learning_rate": lr}, step=elem_count)
           train_loss = 0
 
         if batch_count % self.eval_freq == 0:

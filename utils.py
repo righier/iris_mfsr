@@ -44,4 +44,5 @@ def get_cpu_device():
 
 import json
 def load_config(path):
-    return json.load(path)
+    with open(path) as fp: 
+        return json.load(fp)
