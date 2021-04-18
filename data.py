@@ -29,7 +29,7 @@ def augment(img, params, cs=1):
 
 class ImageSequenceDataset(Dataset):
 
-  def __init__(self, basedir, example_name, label_name, dirs, do_grayscale=False, scale=2, sequence_len=7, img_offset=0, train=True, cache=False, separate_central_image=False, single_image=False, augmentation=None, workers=1):
+  def __init__(self, basedir, example_name, label_name, dirs, do_grayscale=False, scale=2, frames=7, img_offset=0, train=True, cache=False, separate_central_image=False, single_image=False, augmentation=None, workers=1):
     for x, y in locals().items():
       if x != 'self':
         setattr(self, x, y)
@@ -50,11 +50,11 @@ class ImageSequenceDataset(Dataset):
 
   def load_datapoint(self, dir):
     abstract_path = os.path.join(self.basedir, dir, self.example_name)
-    example_paths = [abstract_path.format(id) for id in range(self.img_offset, self.sequence_len+self.img_offset)]
+    example_paths = [abstract_path.format(id) for id in range(self.img_offset, self.frames+self.img_offset)]
     label_path = os.path.join(self.basedir, dir, self.label_name)
 
     if self.single_image:
-      img = Image.open(exmaple_paths[self.sequence_len//2])
+      img = Image.open(exmaple_paths[self.frames//2])
       augment_params = None
       X = self.apply_transforms(img, augment_params, 1)
 
@@ -73,7 +73,7 @@ class ImageSequenceDataset(Dataset):
     Y = self.apply_transforms(Y, augment_params, self.scale)
 
     if self.separate_central_image and not self.single_image:
-      return X, imgs[self.sequence_len//2], Y
+      return X, imgs[self.frames//2], Y
     else:
       return X, Y
 
@@ -89,16 +89,16 @@ class ImageSequenceDataset(Dataset):
 
 class Vimeo7GrayDataset(ImageSequenceDataset):
 
-  def __init__(self, basedir, scale=2, sequence_len=7, train=True, **kwargs):
+  def __init__(self, basedir, scale=2, frames=7, train=True, **kwargs):
 
-    kwargs['img_offset'] = 1 + ((7 - sequence_len) // 2)
+    kwargs['img_offset'] = 1 + ((7 - frames) // 2)
     kwargs['example_name'] = "im{0}.jpg"
     kwargs['label_name'] = "label_x{0}.jpg".format(scale)
     kwargs['dirs'] = self.load_dirs(basedir, train)
     kwargs['basedir'] = os.path.join(basedir, 'sequences')
     kwargs['do_grayscale'] = False
 
-    super().__init__(scale=scale, sequence_len=sequence_len, train=train, **kwargs)
+    super().__init__(scale=scale, frames=frames, train=train, **kwargs)
 
   def load_dirs(self, basedir, train):
     filename = 'sep_trainlist.txt' if train else 'sep_testlist.txt'
@@ -109,18 +109,27 @@ class Vimeo7GrayDataset(ImageSequenceDataset):
 
 class FaceGrayDataset(ImageSequenceDataset):
 
-  def __init__(self, basedir, scale=2, sequence_len=7, train=True, **kwargs):
+  def __init__(self, basedir, scale=2, frames=7, train=True, **kwargs):
 
     subdir = "train" if train else "test"
 
-    kwargs['img_offset'] = 1 + ((7 - sequence_len) // 2)
+    kwargs['img_offset'] = 1 + ((7 - frames) // 2)
     kwargs['example_name'] = "img_{0}.JPG"
     kwargs['label_name'] = "label.JPG" if scale==2 else "label_{0}.JPG".format(scale*32)
     kwargs['dirs'] = self.load_dirs(basedir, subdir)
     kwargs['basedir'] = os.path.join(basedir, subdir)
     kwargs['do_grayscale'] = True
 
-    super().__init__(scale=scale, sequence_len=sequence_len, train=train, **kwargs)
+    super().__init__(scale=scale, frames=frames, train=train, **kwargs)
 
   def load_dirs(self, basedir, subdir):
     return sorted(os.listdir(os.path.join(basedir, subdir)), key=int)
+
+def make_dataset(name, **kwargs):
+  if name == "vimeo":
+    return Vimeo7GrayDataset(**kwargs)
+  elif name == 'faces':
+    return FaceGrayDataset(**kwargs)
+
+def make_loader(dataset, **kwargs):
+  return torch.utils.data.DataLoader(dataset, **kwargs)

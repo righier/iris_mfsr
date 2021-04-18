@@ -1,0 +1,64 @@
+{
+    "project_name": "Iris MFSR",
+    "run_description": "",
+    "save_dir": "./drive/MyDrive/models/",
+
+    "train_dataset": {
+        "dataset": {
+            "name": "mlfdb",
+            "basedir": "./mlfdb",
+            "train": true,
+            "cache": false,
+            "single_image": false,
+            "scale": 2,
+            "frames": 7
+        },
+        "dataloader": {
+            "batch_size": 32,
+            "workers": 2
+        }
+    },
+    "test_dataset": {
+        "dataset": {
+            "name": "mlfdb",
+            "basedir": "./mlfdb",
+            "train": false,
+            "cache": false,
+            "single_image": false,
+            "scale": 2,
+            "frames": 7
+        },
+        "dataloader": {
+            "batch_size": 32,
+            "workers": 2
+        }
+    },
+    "model": {
+        "name": "3dwdsrnet",
+        "upsample": "bilinear",
+        "mean":0.3780295949066102,
+        "std":0.21023042003545392,
+        "scale": 2,
+        "frames": 7,
+        "n_layers": 8,
+        "n_filters": 32,
+        "weight_norm": true
+    },
+    "trainer": {
+        "epochs": 20,
+        "optimizer": {
+            "name": "adam",
+            "lr": 0.0005,
+            "weight_decay": 0.000,
+            "scheduler": {
+                "name": "onecycle",
+                "max_lr": 0.009
+            }
+        },
+        "criterion": "l1",
+        "score": "psnr",
+        "log_freq": 50,
+        "eval_freq": 100,
+        "mixed_precision": false
+    }
+}

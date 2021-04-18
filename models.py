@@ -59,9 +59,31 @@ class upsample_conv2d(nn.Module):
     x = F.pixel_shuffle(x, self.scale)
     return x
 
+class Model2DSRnet(nn.Module):
+  def __init__(self, upsample, scale=2, n_layers=8, n_filters=32, weight_norm=True, ksize=3, mean=0.0, std=1.0):
+    super(Model2DSRnet, self).__init__()
+    self.scale = scale,
+    self.mean = mean
+    self.std = std
+    self.upsample = upsample
+
+    relu = nn.ReLU(inplace=True)
+    self.convPass = nn.Sequential(
+      wn_conv2d(1, n_filters, ksize, 1, 1), 
+      relu,
+      *repeat(wn_conv2d, (n_filters, n_filters, ksize, 1, 1, weight_norm), n_layers, activation=relu),
+    )
+
+  def forward(self, x):
+    x = (x - self.mean) / self.std
+    up = self.upsample(x)
+    x = self.convPass(x)
+    x = x + up
+    x = x * self.std + self.mean
+    return x
+
 
 class Model3DCommon(nn.Module):
-
   def __init__(self, res_block, upsample, scale=2, frames=7, n_layers=8, n_filters=32, expansion=6, weight_norm=True, ksize=3, mean=0.0, std=1.0):
     super(Model3DCommon, self).__init__()
     self.scale = scale
@@ -83,38 +105,29 @@ class Model3DCommon(nn.Module):
   
   def forward(self, x):
     x = (x-self.mean) / self.std # normalize
-
-    lr = x[:, :, 3] #picks the image in the middle of the video sequence @TODO: try to pass the middle image as a separate input
+    lr = x[:, :, 3] #picks the image in the middle of the video sequence 
     y = self.upsample(lr)
-
     x = self.convPass(x)
     x = x.squeeze(dim=2) # pixel_shuffle expects 4D tensors so we remove the depth dimension that is == 1
     x = F.pixel_shuffle(x, self.scale) # reorders pixels
-
     x = x.add(y)
-
     x = x * self.std + self.mean # denormalize
     return x
-
-def upsample_naive(scale, mode='bicubic'):
-  return nn.Upsample(scale_factor=scale, mode=mode, align_corners=False)
-
-def Model3DWDSRnet(res_block=wdsr3d_block, upsample='conv2d', scale=2, frames=7, n_layers=8, n_filters=32, expansion=6, weight_norm=True, ksize=3, **kargs):
-  if upsample == 'bicubic': 
-    upsample = upsample_naive(scale, mode='bicubic')
-  elif upsample == 'bilinear':
-    upsample = upsample_naive(scale, mode='bilinear')
-  elif upsample == 'conv2d':
-    upsample = upsample_conv2d(scale)
-  else:
-    upsample = upsample(scale)
-  return Model3DCommon(res_block, upsample, scale, frames, n_layers, n_filters, expansion, weight_norm, ksize, **kargs)
-
-def Model3DSRnet(scale=2, frames=7, n_layers=4, n_filters=64, weight_norm=False, ksize=3, **kwargs):
-  upsample = upsample_naive(scale)
-  return Model3DCommon(res_block, upsample, scale, frames, n_layers, n_filters, expansion, weight_norm, ksize, **kargs)
 
 def init_weights(m):
   if type(m) == nn.Conv3d or type(m) == nn.Conv2d:
     torch.nn.init.xavier_uniform_(m.weight)
     m.bias.data.fill_(0.01)
+
+def make_model(name, upsample='bilinear', **kwargs):
+  if upsample == 'conv2d':
+    upsample = upsample_conv2d(scale)
+  else:
+    upsample = nn.Upsample(scale_factor=scale, mode=upsample, align_corners=False)
+
+  if cfg.model_name=='3dwdsrnet':
+    return Model3DCommon(wdsr3d_block, upsample, **kwargs)
+  if cfg.model_name=='3dsrnet':
+    return Model3DCommon(wn_conv3d, upsample, **kwargs)
+  if name=="2dsrnet":
+    return Model2DSRnet(upsample, **kwargs)

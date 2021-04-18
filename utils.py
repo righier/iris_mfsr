@@ -42,4 +42,6 @@ def get_device():
 def get_cpu_device():
     return torch.device("cpu")
 
-
+import json
+def load_config(path):
+    return json.load(path)
