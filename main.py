@@ -30,7 +30,7 @@ def run_experiment(cfg_dict):
 
     trainloader = data.make_loader(**cfg.train_dataset)
     testloader = data.make_loader(**cfg.test_dataset)
-    samples = next(iter(testloader))
+    samples = [testloader.dataset[i][0] for i in range(8)]
 
     save_path = cfg.save_dir + '/' + wandb_run.name + "_best.pt"
     train = trainer.Trainer(save_path, device, model, trainloader, testloader, samples, **cfg.trainer)
