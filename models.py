@@ -75,7 +75,7 @@ class Model2DSRnet(nn.Module):
       wn_conv2d(1, n_filters, ksize, 1, 1), 
       relu,
       *repeat(wn_conv2d, (n_filters, n_filters, ksize, 1, 1, weight_norm), n_layers, activation=relu),
-      wn_conv2d(n_filters, scale*scale, ksize, 1, 1 weight_norm),
+      wn_conv2d(n_filters, scale*scale, ksize, 1, 1, weight_norm),
     )
 
   def forward(self, x):
