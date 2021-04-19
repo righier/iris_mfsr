@@ -85,7 +85,7 @@ class Trainer():
     score = score / count
 
     imgs = self.samples_to_wandb( self.model, self.device, self.device_cpu, self.samples)
-    wandb.log({"epoch": epoch, "test_loss": test_loss, "score": score, "imgs": imgs}, step=step)
+    wandb.log({"epoch": epoch, "test_loss": loss, "score": score, "imgs": imgs}, step=step)
     self.model.train()
 
     return loss, score
