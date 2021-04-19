@@ -119,7 +119,7 @@ class EyesGrayDataset(ImageSequenceDataset):
     kwargs['do_grayscale'] = False
     train=False
 
-    super(Vimeo7GrayDataset, self).__init__(scale=scale, frames=frames, train=train, **kwargs)
+    super(EyesGrayDataset, self).__init__(scale=scale, frames=frames, train=train, **kwargs)
 
   def load_dirs(self, basedir):
     people = os.listdir(basedir)
