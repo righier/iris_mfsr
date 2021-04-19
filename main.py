@@ -18,12 +18,15 @@ def run_experiment(cfg_dict):
 
   wandb.login()
 
-  #with wandb.init(project=cfg_dict['project_name'], config=cfg_dict, notes=cfg_dict['run_description']) as wandb_run:
-
-  wandb_run = wandb.init(project=cfg_dict['project_name'], config=cfg_dict, notes=cfg_dict['run_description'])
-
-  if True:
+  with wandb.init(project=cfg_dict['project_name'], config=cfg_dict, notes=cfg_dict['run_description']) as wandb_run:
     cfg = wandb_run.config
+
+    if cfg.model['name'] == '2dsrnet':
+      cfg.train_dataset['dataset']['single_image'] = True
+      cfg.test_dataset['dataset']['single_image'] = True
+    else:
+      cfg.train_dataset['dataset']['single_image'] = False
+      cfg.test_dataset['dataset']['single_image'] = False
 
     model = models.make_model(**cfg.model).to(device)
     model = model.apply(models.init_weights)
