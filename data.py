@@ -125,7 +125,7 @@ class EyesGrayDataset(ImageSequenceDataset):
     people = os.listdir(basedir)
     dirlist = []
     for person in people:
-      dirlist.extend(os.path.join(person, sample) for sample in os.listdir(basedir, person))
+      dirlist.extend(os.path.join(person, sample) for sample in os.listdir(os.path.join(basedir, person)))
     return sorted(dirlist)
 
 class FaceGrayDataset(ImageSequenceDataset):
