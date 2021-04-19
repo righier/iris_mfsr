@@ -28,7 +28,7 @@
     },
 
     "model": {
-        "name": "3dwdsrnet",
+        "name": "2dsrnet",
         "upsample": "bilinear",
         "scale": 2,
         "frames": 7,

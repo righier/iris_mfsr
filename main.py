@@ -32,9 +32,11 @@ def expand_cfg(cfg):
   if cfg['model']['name'] == '2dsrnet':
     cfg['train_dataset']['dataset']['single_image'] = True
     cfg['test_dataset']['dataset']['single_image'] = True
+    cfg['trainer']['single_image'] = True
   else:
     cfg['train_dataset']['dataset']['single_image'] = False
     cfg['test_dataset']['dataset']['single_image'] = False
+    cfg['trainer']['single_image'] = False
     
   scale = cfg['model']['scale']
   cfg['train_dataset']['dataset']['scale'] = scale

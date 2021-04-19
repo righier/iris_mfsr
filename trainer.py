@@ -14,7 +14,7 @@ import data
 
 class Trainer():
 
-  def __init__(self, save_path, device, model, trainloader, testloader, samples, epochs, optimizer, criterion, score, log_freq, eval_freq, mixed_precision):
+  def __init__(self, save_path, device, model, trainloader, testloader, samples, epochs, optimizer, criterion, score, log_freq, eval_freq, mixed_precision, single_image):
     self.save_path = save_path
     self.device = device
     self.device_cpu = utils.get_cpu_device()
@@ -26,6 +26,7 @@ class Trainer():
     self.log_freq = log_freq
     self.eval_freq = eval_freq
     self.mixed_precision = mixed_precision
+    self.single_image = single_image
 
     self.init_criterion(criterion)
     self.init_score(score)
@@ -100,7 +101,10 @@ class Trainer():
     return float(loss)
 
   def samples_to_wandb(self, model, device, device_cpu, samples):
-    return [wandb.Image(TF.to_pil_image(model(x[None, :, :, :, :].to(device))[0].clamp(0.0, 1.0).to(device_cpu))) for x in samples]
+    if self.single_image:
+      return [wandb.Image(TF.to_pil_image(model(x[None, :, :, :].to(device))[0].clamp(0.0, 1.0).to(device_cpu))) for x in samples]
+    else:
+      return [wandb.Image(TF.to_pil_image(model(x[None, :, :, :, :].to(device))[0].clamp(0.0, 1.0).to(device_cpu))) for x in samples]
 
   
   def train(self):
