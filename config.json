@@ -1,20 +1,16 @@
 {
     "project_name": "Iris MFSR",
     "run_description": "",
-    "save_dir": "./drive/MyDrive/models/",
+    "save_dir": "./drive/MyDrive/models",
 
     "train_dataset": {
         "dataset": {
             "name": "mlfdb",
-            "basedir": "C:/datasets/mlfdb",
-            "train": true,
-            "cache": false,
-            "single_image": false,
-            "scale": 2,
-            "frames": 7
+            "basedir": "/home/ermanno/datasets/mlfdb",
+            "cache": false
         },
         "dataloader": {
-            "batch_size": 1,
+            "batch_size": 8,
             "num_workers": 2
         }
     },
@@ -22,12 +18,8 @@
     "test_dataset": {
         "dataset": {
             "name": "mlfdb",
-            "basedir": "C:/datasets/mlfdb",
-            "train": false,
-            "cache": false,
-            "single_image": false,
-            "scale": 2,
-            "frames": 7
+            "basedir": "/home/ermanno/datasets/mlfdb",
+            "cache": false
         },
         "dataloader": {
             "batch_size": 1,
@@ -38,8 +30,6 @@
     "model": {
         "name": "3dwdsrnet",
         "upsample": "bilinear",
-        "mean":0.3780295949066102,
-        "std":0.21023042003545392,
         "scale": 2,
         "frames": 7,
         "n_layers": 8,
@@ -60,8 +50,8 @@
         },
         "criterion": "l1",
         "score": "psnr",
-        "log_freq": 1,
-        "eval_freq": 1,
+        "log_freq": 200,
+        "eval_freq": 1000000,
         "mixed_precision": false
     }
 }

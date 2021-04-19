@@ -103,7 +103,11 @@ class Trainer():
     return [wandb.Image(TF.to_pil_image(model(x[None, :, :, :, :].to(device))[0].clamp(0.0, 1.0).to(device_cpu))) for x in samples]
 
   
-  def train(self, train_loss=0, batch_count=0, elem_count=0):
+  def train(self):
+
+    train_loss = 0
+    batch_count = 0
+    elem_count = 0
 
     best_score = 0
 
@@ -117,6 +121,8 @@ class Trainer():
 
         loss_batch = self.train_batch(X, Y)
 
+        # print(loss_batch)
+
         if self.freq_scheduler:
           self.scheduler.step()
 
@@ -125,6 +131,7 @@ class Trainer():
         elem_count += batch_size
 
         if batch_count % self.log_freq == 0:
+          #print(train_loss/self.log_freq)
           lr = self.optimizer.param_groups[0]['lr']
           wandb.log({"train_loss": train_loss / self.log_freq, "learning_rate": lr}, step=elem_count)
           train_loss = 0

@@ -107,6 +107,27 @@ class Vimeo7GrayDataset(ImageSequenceDataset):
       dirlist = [s.strip() for s in f.readlines()]
     return dirlist
 
+class EyesGrayDataset(ImageSequenceDataset):
+
+  def __init__(self, basedir, scale=2, frames=7, train=False, **kwargs):
+
+    kwargs['img_offset'] = 1 + ((7 - frames) // 2)
+    kwargs['example_name'] = "im{0}x"+str(scale)+".jpg"
+    kwargs['label_name'] = "im4.jpg"
+    kwargs['dirs'] = self.load_dirs(basedir)
+    kwargs['basedir'] = basedir
+    kwargs['do_grayscale'] = False
+    train=False
+
+    super(EyesGrayDataset, self).__init__(scale=scale, frames=frames, train=train, **kwargs)
+
+  def load_dirs(self, basedir):
+    people = os.listdir(basedir)
+    dirlist = []
+    for person in people:
+      dirlist.extend(os.path.join(person, sample) for sample in os.listdir(os.path.join(basedir, person)))
+    return sorted(dirlist)
+
 class FaceGrayDataset(ImageSequenceDataset):
 
   def __init__(self, basedir, scale=2, frames=7, train=True, **kwargs):
@@ -130,6 +151,8 @@ def make_dataset(name, **kwargs):
     return Vimeo7GrayDataset(**kwargs)
   elif name == 'mlfdb':
     return FaceGrayDataset(**kwargs)
+  elif name == 'eyes':
+    return EyesGrayDataset(**kwargs)
   else: raise ValueError
 
 def make_loader(dataset, dataloader):
