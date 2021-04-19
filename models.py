@@ -65,7 +65,7 @@ class upsample_conv2d(nn.Module):
 class Model2DSRnet(nn.Module):
   def __init__(self, upsample, scale=2, n_layers=8, n_filters=32, weight_norm=True, ksize=3, mean=0.0, std=1.0):
     super(Model2DSRnet, self).__init__()
-    self.scale = scale,
+    self.scale = scale
     self.mean = mean
     self.std = std
     self.upsample = upsample
