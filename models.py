@@ -18,6 +18,9 @@ def wn_conv3d(inc, outc, ksize, stride=1, padding=0, weight_norm=True, padding_m
   module = nn.Conv3d(inc, outc, ksize, stride, padding, padding_mode=padding_mode)
   return nn.utils.weight_norm(module) if weight_norm else module
 
+def wn_conv3dwrap(n_filters, expansion=0, weight_norm=True, low_rank_ratio=0):
+  return wn_conv3d(n_filters, n_filters, 3, 1, 1, weight_norm)
+
 class wdsr3d_block(nn.Module):
   def __init__(self, n_filters, expansion=6, weight_norm=True, low_rank_ratio = 0.8):
     super(wdsr3d_block, self).__init__()
@@ -72,6 +75,7 @@ class Model2DSRnet(nn.Module):
       wn_conv2d(1, n_filters, ksize, 1, 1), 
       relu,
       *repeat(wn_conv2d, (n_filters, n_filters, ksize, 1, 1, weight_norm), n_layers, activation=relu),
+      wn_conv2d(n_filters, scale*scale, ksize, 1, 1 weight_norm),
     )
 
   def forward(self, x):
@@ -130,7 +134,7 @@ def make_model(name, upsample='bilinear', scale=2, **kwargs):
   if name=='3dwdsrnet':
     return Model3DCommon(wdsr3d_block, upsample, scale, **kwargs)
   elif name=='3dsrnet':
-    return Model3DCommon(wn_conv3d, upsample, scale, **kwargs)
+    return Model3DCommon(wn_conv3dwrap, upsample, scale, **kwargs)
   elif name=="2dsrnet":
     return Model2DSRnet(upsample, scale, **kwargs)
   else: raise ValueError
