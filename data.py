@@ -54,7 +54,7 @@ class ImageSequenceDataset(Dataset):
     label_path = os.path.join(self.basedir, dir, self.label_name)
 
     if self.single_image:
-      img = Image.open(exmaple_paths[self.frames//2])
+      img = Image.open(example_paths[self.frames//2])
       augment_params = None
       X = self.apply_transforms(img, augment_params, 1)
 
@@ -119,13 +119,13 @@ class EyesGrayDataset(ImageSequenceDataset):
     kwargs['do_grayscale'] = False
     train=False
 
-    super(EyesGrayDataset, self).__init__(scale=scale, frames=frames, train=train, **kwargs)
+    super(Vimeo7GrayDataset, self).__init__(scale=scale, frames=frames, train=train, **kwargs)
 
   def load_dirs(self, basedir):
     people = os.listdir(basedir)
     dirlist = []
     for person in people:
-      dirlist.extend(os.path.join(person, sample) for sample in os.listdir(os.path.join(basedir, person)))
+      dirlist.extend(os.path.join(person, sample) for sample in os.listdir(basedir, person))
     return sorted(dirlist)
 
 class FaceGrayDataset(ImageSequenceDataset):
