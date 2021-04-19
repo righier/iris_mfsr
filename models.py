@@ -78,6 +78,7 @@ class Model2DSRnet(nn.Module):
     x = (x - self.mean) / self.std
     up = self.upsample(x)
     x = self.convPass(x)
+    x = F.pixel_shuffle(x, self.scale)
     x = x + up
     x = x * self.std + self.mean
     return x
