@@ -97,8 +97,7 @@ class Trainer():
     self.optimizer.zero_grad()
     loss.backward()
     self.optimizer.step()
-    loss = float(loss)
-    return loss
+    return float(loss)
 
   def samples_to_wandb(self, model, device, device_cpu, samples):
     return [wandb.Image(TF.to_pil_image(model(x[None, :, :, :, :].to(device))[0].clamp(0.0, 1.0).to(device_cpu))) for x in samples]
@@ -126,9 +125,8 @@ class Trainer():
         elem_count += batch_size
 
         if batch_count % self.log_freq == 0:
-          train_loss /= self.log_freq
           lr = self.optimizer.param_groups[0]['lr']
-          wandb.log({"train_loss": train_loss, "learning_rate": lr}, step=elem_count)
+          wandb.log({"train_loss": train_loss / self.log_freq, "learning_rate": lr}, step=elem_count)
           train_loss = 0
 
         if batch_count % self.eval_freq == 0:
