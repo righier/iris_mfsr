@@ -42,7 +42,7 @@ def VimeoDataset(basedir, scale=2, single_image=False, train=True, patches=True,
   xnames = ["im{}.{}".format(i+1, ext) for i in range(7)]
   yname = "label_x{}.{}".format(scale, ext)
   dirs = utils.readlines(os.path.join(basedir, 'sep_trainlist.txt' if train else 'sep_testlist.txt'))
-  if patches: dirs = [os.path.join(dir, patch) for dir in dirs for patch in range(8)]
+  if patches: dirs = [os.path.join(dir, str(patch)) for dir in dirs for patch in range(8)]
   basedir = os.path.join(basedir, 'sequences')
   return ImageSequenceDataset(basedir, xnames, yname, dirs, single_image, grayscale=True, cache=cache)
 
