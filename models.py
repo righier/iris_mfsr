@@ -5,23 +5,23 @@ import torch.nn.functional as F
 def repeat(block, args, n, activation=None):
   return [layer for _ in range(n) for layer in (block(*args), activation) if layer]
 
-def wn_conv(conv, *args, wn=True, **kwargs):
+def wn_conv(conv, wn, *args, **kwargs):
   return nn.utils.weight_norm(conv(*args, **kwargs)) if wn else conv(*args, **kwargs)
 
-def wn_conv2d(*args, **kwargs): return wn_conv(nn.Conv2d, *args, **kwargs)
-def wn_conv3d(*args, **kwargs): return wn_conv(nn.Conv3d, *args, **kwargs)
+def wn_conv2d(wn, *args, **kwargs): return wn_conv(nn.Conv2d, wn, *args, **kwargs)
+def wn_conv3d(wn, *args, **kwargs): return wn_conv(nn.Conv3d, wn, *args, **kwargs)
 
-def wn_conv3dwrap(nf, wn=True, exp=0, lrr=0): return nn.Sequential(wn_conv3d(nf, nf, 3, 1, 1, wn=wn), nn.ReLU(inplace=True))
-def wn_conv2dwrap(nf, wn=True, exp=0, lrr=0): return nn.Sequential(wn_conv2d(nf, nf, 3, 1, 1, wn=wn), nn.ReLU(inplace=True))
+def wn_conv3dwrap(wn, nf, exp=0, lrr=0): return nn.Sequential(wn_conv3d(wn, nf, nf, 3, 1, 1), nn.ReLU(inplace=True))
+def wn_conv2dwrap(wn, nf, exp=0, lrr=0): return nn.Sequential(wn_conv2d(wn, nf, nf, 3, 1, 1), nn.ReLU(inplace=True))
 
 class wdsr_block(nn.Module):
-  def __init__(self, conv, nf=32, wn=True, exp=6, lrr=0.8):
+  def __init__(self, conv, wn=True, nf=32, exp=6, lrr=0.8):
     super(wdsr_block, self).__init__()
     self.conv = nn.Sequential(
-      conv(nf, nf*exp, 1, wn=wn),
+      conv(wn, nf, nf*exp, 1),
       nn.ReLU(inplace=True),
-      conv(nf*exp, int(nf*lrr), 1, wn=wn),
-      conv(int(nf*lrr), nf, 3, 1, 1, wn=wn)
+      conv(wn, nf*exp, int(nf*lrr), 1),
+      conv(wn, int(nf*lrr), nf, 3, 1, 1)
     )
 
   def forward(self, x): return x + self.conv(x)
@@ -29,11 +29,11 @@ class wdsr_block(nn.Module):
 def wdsr3d_block(*args, **kwargs): return wdsr_block(wn_conv3d, *args, **kwargs)
 def wdsr2d_block(*args, **kwargs): return wdsr_block(wn_conv2d, *args, **kwargs)
 
-def upsample_conv2d(scale, nf=1):
+def upsample_conv2d(scale, nf=1, wn=True):
   return nn.Sequential(
-    wn_conv2d(nf, scale*scale, 3, 1, 1, padding_mode='reflect'),
+    wn_conv2d(wn, nf, scale*scale, 3, 1, 1, padding_mode='reflect'),
     nn.ReLU(inplace=True),
-    wn_conv2d(scale*scale, scale*scale, 3, 1, 1, padding_mode='reflect'),
+    wn_conv2d(wn, scale*scale, scale*scale, 3, 1, 1, padding_mode='reflect'),
     torch.nn.PixelShuffle(scale)
   )
 
@@ -52,10 +52,10 @@ class Model2DCommon(nn.Module):
     self.upsample = upsample
 
     self.convPass = nn.Sequential(
-      wn_conv2d(1, n_filters, ksize, 1, 1), 
+      wn_conv2d(weight_norm, 1, n_filters, ksize, 1, 1), 
       nn.ReLU(inplace=True),
-      *repeat(res_block, (n_filters, weight_norm), n_layers),
-      wn_conv2d(n_filters, scale*scale, ksize, 1, 1, weight_norm),
+      *repeat(res_block, (weight_norm, n_filters), n_layers),
+      wn_conv2d(weight_norm, n_filters, scale*scale, ksize, 1, 1),
       nn.PixelShuffle(scale)
     )
 
@@ -74,11 +74,11 @@ class Model3DCommon(nn.Module):
 
     bod2_cnt = (frames // (ksize - 1)) - 1
     self.convPass = nn.Sequential(
-      wn_conv3d(1, n_filters, ksize, 1, 1),
+      wn_conv3d(weight_norm, 1, n_filters, ksize, 1, 1),
       nn.ReLU(inplace=True),
-      *repeat(res_block, (n_filters, weight_norm), n_layers),
-      *repeat(wn_conv3d, (n_filters, n_filters, ksize, 1, (0,1,1), weight_norm), bod2_cnt, nn.ReLU(inplace=True)),
-      wn_conv3d(n_filters, scale*scale, ksize, 1, (0,1,1), weight_norm),
+      *repeat(res_block, (weight_norm, n_filters), n_layers),
+      *repeat(wn_conv3d, (weight_norm, n_filters, n_filters, ksize, 1, (0,1,1)), bod2_cnt, nn.ReLU(inplace=True)),
+      wn_conv3d(weight_norm, n_filters, scale*scale, ksize, 1, (0,1,1)),
       Lambda(lambda x: x.squeeze(2)),
       nn.PixelShuffle(scale)
     )
