@@ -11,8 +11,8 @@ def wn_conv(conv, *args, wn=True, **kwargs):
 def wn_conv2d(*args, **kwargs): return wn_conv(nn.Conv2d, *args, **kwargs)
 def wn_conv3d(*args, **kwargs): return wn_conv(nn.Conv3d, *args, **kwargs)
 
-def wn_conv3dwrap(nf, wn=True, exp=0, lrr=0): return nn.Sequential(wn_conv3d(nf, nf, 3, 1, 1, wn), nn.ReLU(inplace=True))
-def wn_conv2dwrap(nf, wn=True, exp=0, lrr=0): return nn.Sequential(wn_conv2d(nf, nf, 3, 1, 1, wn), nn.ReLU(inplace=True))
+def wn_conv3dwrap(nf, wn=True, exp=0, lrr=0): return nn.Sequential(wn_conv3d(nf, nf, 3, 1, 1, wn=wn), nn.ReLU(inplace=True))
+def wn_conv2dwrap(nf, wn=True, exp=0, lrr=0): return nn.Sequential(wn_conv2d(nf, nf, 3, 1, 1, wn=wn), nn.ReLU(inplace=True))
 
 class wdsr_block(nn.Module):
   def __init__(self, conv, nf=32, wn=True, exp=6, lrr=0.8):
