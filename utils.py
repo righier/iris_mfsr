@@ -50,3 +50,4 @@ def load_config(path):
 def readlines(path):
     with open(path) as f: 
         dirs = [line.rstrip() for line in f]
+    return dirs
