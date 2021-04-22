@@ -1,121 +1,93 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-#from torch.nn.utils import weight_norm
 
 def repeat(block, args, n, activation=None):
-  layers = []
-  for _ in range(n):
-    layers.append(block(*args))
-    if activation: layers.append(activation)
-  return layers
+  return [layer for _ in range(n) for layer in (block(*args), activation) if layer]
 
-def wn_conv2d(inc, outc, ksize, stride=1, padding=0, weight_norm=True, padding_mode='zeros'):
-  module = nn.Conv2d(inc, outc, ksize, stride, padding, padding_mode=padding_mode)
-  return nn.utils.weight_norm(module) if weight_norm else module
+def wn_conv(conv, *args, wn=True, **kwargs):
+  return nn.utils.weight_norm(conv(*args, **kwargs)) if wn else conv(*args, **kwargs)
 
-def wn_conv3d(inc, outc, ksize, stride=1, padding=0, weight_norm=True, padding_mode='zeros'):
-  module = nn.Conv3d(inc, outc, ksize, stride, padding, padding_mode=padding_mode)
-  return nn.utils.weight_norm(module) if weight_norm else module
+def wn_conv2d(*args, **kwargs): return wn_conv(nn.Conv2d, *args, **kwargs)
+def wn_conv3d(*args, **kwargs): return wn_conv(nn.Conv3d, *args, **kwargs)
 
-def wn_conv3dwrap(n_filters, expansion=0, weight_norm=True, low_rank_ratio=0):
-  return wn_conv3d(n_filters, n_filters, 3, 1, 1, weight_norm)
+def wn_conv3dwrap(nf, wn=True, exp=0, lrr=0): return nn.Sequential(wn_conv3d(nf, nf, 3, 1, 1, wn), nn.ReLU(inplace=True))
+def wn_conv2dwrap(nf, wn=True, exp=0, lrr=0): return nn.Sequential(wn_conv2d(nf, nf, 3, 1, 1, wn), nn.ReLU(inplace=True))
 
-class wdsr3d_block(nn.Module):
-  def __init__(self, n_filters, expansion=6, weight_norm=True, low_rank_ratio = 0.8):
-    super(wdsr3d_block, self).__init__()
+class wdsr_block(nn.Module):
+  def __init__(self, conv, nf=32, wn=True, exp=6, lrr=0.8):
+    super(wdsr_block, self).__init__()
     self.conv = nn.Sequential(
-      wn_conv3d(n_filters, n_filters * expansion, 1, weight_norm=weight_norm), 
+      conv(nf, nf*exp, 1, wn=wn),
       nn.ReLU(inplace=True),
-      wn_conv3d(n_filters * expansion, int(n_filters * low_rank_ratio), 1, weight_norm=weight_norm),
-      wn_conv3d(int(n_filters * low_rank_ratio), n_filters, 3, padding=1, weight_norm=weight_norm)
+      conv(nf*exp, int(nf*lrr), 1, wn=wn),
+      conv(int(nf*lrr), nf, 3, 1, 1, wn=wn)
     )
 
-  def forward(self, x):
-    return x + self.conv(x)
+  def forward(self, x): return x + self.conv(x)
 
-class wdsr2d_block(nn.Module):
-  def __init__(self, n_filters, expansion=6, weight_norm=True, low_rank_ratio = 0.8):
-    super(wdsr3d_block, self).__init__()
-    self.conv = nn.Sequential(
-      wn_conv2d(n_filters, n_filters * expansion, 1, weight_norm=weight_norm), 
-      nn.ReLU(inplace=True),
-      wn_conv2d(n_filters * expansion, int(n_filters * low_rank_ratio), 1, weight_norm=weight_norm),
-      wn_conv2d(int(n_filters * low_rank_ratio), n_filters, 3, padding=1, weight_norm=weight_norm)
-    )
+def wdsr3d_block(*args, **kwargs): return wdsr_block(wn_conv3d, *args, **kwargs)
+def wdsr2d_block(*args, **kwargs): return wdsr_block(wn_conv2d, *args, **kwargs)
 
-  def forward(self, x):
-    return x + self.conv(x)
+def upsample_conv2d(scale, nf=1):
+  return nn.Sequential(
+    wn_conv2d(nf, scale*scale, 3, 1, 1, padding_mode='reflect'),
+    nn.ReLU(inplace=True),
+    wn_conv2d(scale*scale, scale*scale, 3, 1, 1, padding_mode='reflect'),
+    torch.nn.PixelShuffle(scale)
+  )
 
-class upsample_conv2d(nn.Module):
-  def __init__(self, scale, n_filters=1):
-    super(upsample_conv2d, self).__init__()
-    self.scale = scale
-    self.body = nn.Sequential(
-      wn_conv2d(n_filters, scale*scale, 3, padding=1, padding_mode='reflect'),
-      nn.ReLU(inplace=True),
-      wn_conv2d(scale*scale, scale*scale, 3, padding=1, padding_mode='reflect'),
-    )
+class Lambda(nn.Module):
+    def __init__(self, func):
+        super(Lambda, self).__init__()
+        self.func = func
+    def forward(self, x):
+        return self.func(x)
 
-  def forward(self, x):
-    x = self.body(x)
-    x = F.pixel_shuffle(x, self.scale)
-    return x
-
-class Model2DSRnet(nn.Module):
-  def __init__(self, upsample, scale=2, n_layers=8, n_filters=32, weight_norm=True, ksize=3, mean=0.0, std=1.0):
+class Model2DCommon(nn.Module):
+  def __init__(self, res_block, upsample, scale=2, n_layers=8, n_filters=32, weight_norm=True, ksize=3, mean=0.0, std=1.0):
     super(Model2DSRnet, self).__init__()
-    self.scale = scale
-    self.mean = mean
-    self.std = std
+    self.register_buffer('mean', torch.tensor(mean))
+    self.register_buffer('std', torch.tensor(std))
     self.upsample = upsample
 
     relu = nn.ReLU(inplace=True)
     self.convPass = nn.Sequential(
       wn_conv2d(1, n_filters, ksize, 1, 1), 
       relu,
-      *repeat(wn_conv2d, (n_filters, n_filters, ksize, 1, 1, weight_norm), n_layers, activation=relu),
+      *repeat(res_block, (n_filters, weight_norm), n_layers, activation=relu),
       wn_conv2d(n_filters, scale*scale, ksize, 1, 1, weight_norm),
+      nn.PixelShuffle(scale)
     )
 
   def forward(self, x):
     x = (x - self.mean) / self.std
-    up = self.upsample(x)
-    x = self.convPass(x)
-    x = F.pixel_shuffle(x, self.scale)
-    x = x + up
+    x = self.upsample(x) + self.convPass(x)
     x = x * self.std + self.mean
     return x
 
-
 class Model3DCommon(nn.Module):
-  def __init__(self, res_block, upsample, scale=2, frames=7, n_layers=8, n_filters=32, expansion=6, weight_norm=True, ksize=3, mean=0.0, std=1.0):
+  def __init__(self, res_block, upsample, scale=2, frames=7, n_layers=8, n_filters=32, weight_norm=True, ksize=3, mean=0.0, std=1.0):
     super(Model3DCommon, self).__init__()
-    self.scale = scale
-    self.mean = mean
-    self.std = std
+    self.register_buffer('mean', torch.tensor(mean))
+    self.register_buffer('std', torch.tensor(std))
+    self.upsample = upsample
 
     relu = nn.ReLU(inplace=True)
     bod2_cnt = (frames // (ksize - 1)) - 1
-
     self.convPass = nn.Sequential(
       wn_conv3d(1, n_filters, ksize, 1, 1),
       relu,
-      *repeat(res_block, (n_filters, expansion, weight_norm), n_layers),
+      *repeat(res_block, (n_filters, weight_norm), n_layers),
       *repeat(wn_conv3d, (n_filters, n_filters, ksize, 1, (0,1,1), weight_norm), bod2_cnt, relu),
       wn_conv3d(n_filters, scale*scale, ksize, 1, (0,1,1), weight_norm),
+      Lambda(lambda x: x.squeeze(2)),
+      nn.PixelShuffle(scale)
     )
 
-    self.upsample = upsample
-  
   def forward(self, x):
     x = (x-self.mean) / self.std # normalize
-    lr = x[:, :, 3] #picks the image in the middle of the video sequence 
-    y = self.upsample(lr)
-    x = self.convPass(x)
-    x = x.squeeze(dim=2) # pixel_shuffle expects 4D tensors so we remove the depth dimension that is == 1
-    x = F.pixel_shuffle(x, self.scale) # reorders pixels
-    x = x.add(y)
+    x = self.convPass(x) + self.upsample(x[:,:,3])
     x = x * self.std + self.mean # denormalize
     return x
 
@@ -136,5 +108,7 @@ def make_model(name, upsample='bilinear', scale=2, **kwargs):
   elif name=='3dsrnet':
     return Model3DCommon(wn_conv3dwrap, upsample, scale, **kwargs)
   elif name=="2dsrnet":
+    return Model2DSRnet(upsample, scale, **kwargs)
+  elif name=="2dwdsrnet":
     return Model2DSRnet(upsample, scale, **kwargs)
   else: raise ValueError

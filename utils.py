@@ -46,3 +46,7 @@ import json
 def load_config(path):
     with open(path) as fp: 
         return json.load(fp)
+
+def readlines(path):
+    with open(path) as f: 
+        dirs = [line.rstrip() for line in f]

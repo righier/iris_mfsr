@@ -19,7 +19,7 @@ def expand_cfg(cfg):
   if dataset_name == 'mlfdb':
     mean = 0.3780295949066102
     std = 0.21023042003545392
-  elif dataset_name == 'vimeo':
+  elif dataset_name in ('vimeo', 'vimeo_patches'):
     mean = 0.34557581469488063
     std = 0.25942671746370527 
   else:
@@ -29,7 +29,7 @@ def expand_cfg(cfg):
   cfg['model']['mean'] = mean
   cfg['model']['std'] = std
 
-  if cfg['model']['name'] == '2dsrnet':
+  if cfg['model']['name'] in ('2dsrnet', '2dwdsrnet'):
     cfg['train_dataset']['dataset']['single_image'] = True
     cfg['test_dataset']['dataset']['single_image'] = True
     cfg['trainer']['single_image'] = True
