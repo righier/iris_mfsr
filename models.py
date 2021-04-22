@@ -46,16 +46,15 @@ class Lambda(nn.Module):
 
 class Model2DCommon(nn.Module):
   def __init__(self, res_block, upsample, scale=2, n_layers=8, n_filters=32, weight_norm=True, ksize=3, mean=0.0, std=1.0):
-    super(Model2DSRnet, self).__init__()
+    super(Model2DCommon, self).__init__()
     self.register_buffer('mean', torch.tensor(mean))
     self.register_buffer('std', torch.tensor(std))
     self.upsample = upsample
 
-    relu = nn.ReLU(inplace=True)
     self.convPass = nn.Sequential(
       wn_conv2d(1, n_filters, ksize, 1, 1), 
-      relu,
-      *repeat(res_block, (n_filters, weight_norm), n_layers, activation=relu),
+      nn.ReLU(inplace=True),
+      *repeat(res_block, (n_filters, weight_norm), n_layers),
       wn_conv2d(n_filters, scale*scale, ksize, 1, 1, weight_norm),
       nn.PixelShuffle(scale)
     )
@@ -73,13 +72,12 @@ class Model3DCommon(nn.Module):
     self.register_buffer('std', torch.tensor(std))
     self.upsample = upsample
 
-    relu = nn.ReLU(inplace=True)
     bod2_cnt = (frames // (ksize - 1)) - 1
     self.convPass = nn.Sequential(
       wn_conv3d(1, n_filters, ksize, 1, 1),
-      relu,
+      nn.ReLU(inplace=True),
       *repeat(res_block, (n_filters, weight_norm), n_layers),
-      *repeat(wn_conv3d, (n_filters, n_filters, ksize, 1, (0,1,1), weight_norm), bod2_cnt, relu),
+      *repeat(wn_conv3d, (n_filters, n_filters, ksize, 1, (0,1,1), weight_norm), bod2_cnt, nn.ReLU(inplace=True)),
       wn_conv3d(n_filters, scale*scale, ksize, 1, (0,1,1), weight_norm),
       Lambda(lambda x: x.squeeze(2)),
       nn.PixelShuffle(scale)
@@ -108,7 +106,7 @@ def make_model(name, upsample='bilinear', scale=2, **kwargs):
   elif name=='3dsrnet':
     return Model3DCommon(wn_conv3dwrap, upsample, scale, **kwargs)
   elif name=="2dsrnet":
-    return Model2DSRnet(upsample, scale, **kwargs)
+    return Model2DCommon(wdsr2d_block, upsample, scale, **kwargs)
   elif name=="2dwdsrnet":
-    return Model2DSRnet(upsample, scale, **kwargs)
+    return Model2DCommon(wn_conv2dwrap, upsample, scale, **kwargs)
   else: raise ValueError

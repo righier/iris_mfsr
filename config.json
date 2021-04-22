@@ -1,44 +1,43 @@
 {
     "project_name": "Iris MFSR",
     "run_description": "",
-    "save_dir": "./drive/MyDrive/models",
+    "save_dir": "/home/ermanno/Desktop/checkpoints",
 
     "train_dataset": {
         "dataset": {
-            "name": "mlfdb",
-            "basedir": "/home/ermanno/datasets/mlfdb",
-            "cache": false
+            "name": "vimeo_small",
+            "basedir": "/home/ermanno/Desktop/datasets/vimeo_small",
+            "cache": true
         },
         "dataloader": {
-            "batch_size": 8,
+            "batch_size": 32,
             "num_workers": 2
         }
     },
 
     "test_dataset": {
         "dataset": {
-            "name": "mlfdb",
-            "basedir": "/home/ermanno/datasets/mlfdb",
-            "cache": false
+            "name": "test",
+            "basedir": "/home/ermanno/Desktop/datasets/test",
+            "cache": true
         },
         "dataloader": {
-            "batch_size": 1,
+            "batch_size": 32,
             "num_workers": 2
         }
     },
 
     "model": {
-        "name": "2dsrnet",
+        "name": "2dwdsrnet",
         "upsample": "bilinear",
         "scale": 2,
-        "frames": 7,
         "n_layers": 8,
         "n_filters": 32,
         "weight_norm": true
     },
 
     "trainer": {
-        "epochs": 20,
+        "epochs": 5,
         "optimizer": {
             "name": "adam",
             "lr": 0.0005,

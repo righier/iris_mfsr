@@ -2,12 +2,10 @@ import torch
 import torch.nn as nn
 import torchvision
 
-
 def psnr(x, y):
-  EPS = 1e-8
-  mse = torch.mean((x - y) ** 2, dim=(1, 2, 3))
-  scores = -10 * torch.log10(mse + EPS)
-  return torch.mean(scores, dim=0)
+  mse = ((x - y) ** 2).mean(dim=(-3,-2,-1))
+  psnr = -10 * torch.log10(mse + 1e-8)
+  return psnr.mean()
 
 class VggLoss(nn.Module):
   

@@ -67,7 +67,7 @@ def run_experiment(cfg_dict):
       filename = wandb_run.name
     else:
       filename = "checkpoint_" + datetime.date.today().strftime("%d%m%Y")
-    save_path = os.path.join(cfg.save_dir, filename + "_best.py")
+    save_path = os.path.join(cfg.save_dir, filename + "_best.pt")
     train = trainer.Trainer(save_path, device, model, trainloader, testloader, samples, **cfg.trainer)
 
     train.train()

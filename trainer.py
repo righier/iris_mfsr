@@ -117,43 +117,44 @@ class Trainer():
 
     self.model.train()
 
-    wandb.watch(self.model, self.criterion, log='all', log_freq=self.log_freq)
+    wandb.watch(self.model, log_freq=self.log_freq)
     
-    for epoch in tqdm(range(self.epochs), desc="Epochs"):
-      for X, Y in tqdm(self.trainloader, desc="Training", leave=False):
-        batch_size = X.shape[0]
+    with torch.autograd.set_detect_anomaly(True):
+      for epoch in tqdm(range(self.epochs), desc="Epochs"):
+        for X, Y in tqdm(self.trainloader, desc="Training", leave=False):
+          batch_size = X.shape[0]
 
-        loss_batch = self.train_batch(X, Y)
+          loss_batch = self.train_batch(X, Y)
 
-        # print(loss_batch)
+          # print(loss_batch)
 
-        if self.freq_scheduler:
-          self.scheduler.step()
+          if self.freq_scheduler:
+            self.scheduler.step()
 
-        train_loss += loss_batch
-        batch_count += 1
-        elem_count += batch_size
+          train_loss += loss_batch
+          batch_count += 1
+          elem_count += batch_size
 
-        if batch_count % self.log_freq == 0:
-          #print(train_loss/self.log_freq)
-          lr = self.optimizer.param_groups[0]['lr']
-          wandb.log({"train_loss": train_loss / self.log_freq, "learning_rate": lr}, step=elem_count)
-          train_loss = 0
+          if batch_count % self.log_freq == 0:
+            #print(train_loss/self.log_freq)
+            lr = self.optimizer.param_groups[0]['lr']
+            wandb.log({"train_loss": train_loss / self.log_freq, "learning_rate": lr}, step=elem_count)
+            train_loss = 0
 
-        if batch_count % self.eval_freq == 0:
-          test_loss, score = self.test(epoch, elem_count)
+          if batch_count % self.eval_freq == 0:
+            test_loss, score = self.test(epoch, elem_count)
 
-          if score > best_score: 
-            self.save_checkpoint(epoch, test_loss, score)
-            best_score = score
+            if score > best_score: 
+              self.save_checkpoint(epoch, test_loss, score)
+              best_score = score
 
-      if not self.freq_scheduler:
-        self.scheduler.step(test_loss)
-    
-    test_loss, score = self.test(epoch, elem_count)
-    if score > best_score: 
-      self.save_checkpoint(epoch, test_loss, score)
-      best_score = score
+        if not self.freq_scheduler:
+          self.scheduler.step(test_loss)
+      
+      test_loss, score = self.test(epoch, elem_count)
+      if score > best_score: 
+        self.save_checkpoint(epoch, test_loss, score)
+        best_score = score
 
   def save_checkpoint(self, epoch, loss, score):
     torch.save({
