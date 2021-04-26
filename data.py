@@ -68,6 +68,13 @@ def EyesDataset(basedir, scale=2, single_image=False, train=False, cache=False):
   basedir = '.'
   return ImageSequenceDataset(basedir, xnames, yname, dirs, single_image, grayscale=True, cache=cache)
 
+def Eyes2Dataset(basedir, scale=2, single_image=False, train=False, cache=False):
+  xnames = ["im{}_x{}.png".format(i+1, scale) for i in range(7)]
+  yname = "label.png"
+  dirs = sorted(list(glob(os.path.join(basedir,'*'))))
+  basedir = '.'
+  return ImageSequenceDataset(basedir, xnames, yname, dirs, single_image, grayscale=True, cache=cache)
+
 def TestDataset(basedir, scale=2, single_image=False, train=True, ext='png', cache=False):
   xnames = ["im{}.{}".format(i+1, ext) for i in range(7)]
   yname = "label_x{}.{}".format(scale, ext)
@@ -86,6 +93,8 @@ def make_dataset(name, **kwargs):
     return FaceDataset(**kwargs)
   elif name == 'eyes':
     return EyesDataset(**kwargs)
+  elif name == 'eyes2':
+    return Eyes2Dataset(**kwargs)
   elif name == 'test':
     return TestDataset(**kwargs)
   else: raise ValueError
