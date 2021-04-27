@@ -105,8 +105,8 @@ def make_model(name, upsample='bilinear', scale=2, **kwargs):
     return Model3DCommon(wdsr3d_block, upsample, scale, **kwargs)
   elif name=='3dsrnet':
     return Model3DCommon(wn_conv3dwrap, upsample, scale, **kwargs)
-  elif name=="2dsrnet":
-    return Model2DCommon(wdsr2d_block, upsample, scale, **kwargs)
   elif name=="2dwdsrnet":
+    return Model2DCommon(wdsr2d_block, upsample, scale, **kwargs)
+  elif name=="2dsrnet":
     return Model2DCommon(wn_conv2dwrap, upsample, scale, **kwargs)
   else: raise ValueError
