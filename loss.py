@@ -20,7 +20,7 @@ class VggLoss(nn.Module):
     self.register_buffer('mean', torch.Tensor(mean).view(1, 3, 1, 1))
     self.register_buffer('std', torch.Tensor(std).view(1, 3, 1, 1))
 
-    cuts = [0, 4, 9, 16, 23]
+    cuts = [0, 4, 9]
     vgg_feat = torchvision.models.vgg16(pretrained=True).features
     self.blocks = nn.ModuleList(vgg_feat[cuts[i]: cuts[i+1]].eval() for i in range(4))
     for param in self.parameters():
